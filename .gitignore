@@ -1,0 +1,7 @@
+*.mp4
+*.mkv
+*.srt
+build/
+dist/
+*.spec
+__pycache__/
