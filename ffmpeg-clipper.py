@@ -11,7 +11,6 @@ def check_english_track(filepath, stream_type):
         "-of", "csv=p=0", filepath
     ]
     try:
-        # Prevents a black cmd window from flashing
         creationflags = subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
         result = subprocess.run(command, capture_output=True, text=True, check=True, creationflags=creationflags)
         return "eng" in result.stdout.lower()
@@ -37,14 +36,13 @@ def make_clip():
         return
 
     base_name = os.path.splitext(os.path.basename(input_file))[0]
-    save_dir = r"C:\Users\valmr\Videos\Clips"
+    save_dir = r"C:\Users\valmr\Videos\Clips\Temp"
     os.makedirs(save_dir, exist_ok=True)
     
     clean_start = start_time.replace(":", "-").replace(".", "-")
     clean_end = end_time.replace(":", "-").replace(".", "-")
     output_file = os.path.join(save_dir, f"{base_name}_{clean_start}_to_{clean_end}.mp4")
 
-    # Dynamically select tracks based on the ffprobe scan
     audio_map = "0:a:m:language:eng" if check_english_track(input_file, "a") else "0:a:0"
     sub_map = "0:s:m:language:eng" if check_english_track(input_file, "s") else "0:s:0?"
 
@@ -71,16 +69,62 @@ def make_clip():
         messagebox.showinfo("Success", f"Clip saved as:\n{output_file}")
     except subprocess.CalledProcessError:
         messagebox.showerror("Error", "FFmpeg failed. Check your timestamps or video file.")
-        # Automatically clean up the broken 0-byte file
         if os.path.exists(output_file) and os.path.getsize(output_file) == 0:
             os.remove(output_file)
     except FileNotFoundError:
          messagebox.showerror("Error", "FFmpeg not found. Ensure it is installed.")
 
+def merge_clips():
+    # Allow the user to select multiple files at once
+    filepaths = filedialog.askopenfilenames(
+        title="Select Clips to Merge (Hold CTRL to select multiple)",
+        filetypes=(("MP4 Files", "*.mp4"), ("All Files", "*.*"))
+    )
+    
+    if len(filepaths) < 2:
+        if filepaths:  # Only show error if they selected 1 file (if 0, they just cancelled)
+            messagebox.showwarning("Warning", "Please select at least two clips to merge.")
+        return
+
+    save_dir = r"C:\Users\valmr\Videos\Clips\Temp"
+    os.makedirs(save_dir, exist_ok=True)
+    
+    # Auto-increment the filename to prevent overwriting older merges
+    output_file = os.path.join(save_dir, "merged_video.mp4")
+    counter = 1
+    while os.path.exists(output_file):
+        output_file = os.path.join(save_dir, f"merged_video_{counter}.mp4")
+        counter += 1
+
+    list_file_path = os.path.join(save_dir, "join.txt")
+
+    # Generate the join.txt file programmatically
+    with open(list_file_path, 'w', encoding='utf-8') as f:
+        for path in filepaths:
+            clean_path = path.replace('\\', '/')
+            f.write(f"file '{clean_path}'\n")
+
+    command = [
+        "ffmpeg", "-y",
+        "-f", "concat",
+        "-safe", "0",
+        "-i", list_file_path,
+        "-c", "copy",
+        output_file
+    ]
+
+    try:
+        creationflags = subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
+        subprocess.run(command, check=True, creationflags=creationflags)
+        os.remove(list_file_path)  # Clean up the text file automatically
+        messagebox.showinfo("Success", f"Clips merged successfully into:\n{output_file}")
+    except subprocess.CalledProcessError as e:
+        messagebox.showerror("Error", f"Merging failed.\n{e}")
+
 # --- GUI Setup ---
 root = tk.Tk()
 root.title("FFmpeg Video Clipper")
-root.geometry("450x250")
+root.geometry("450x320")
 root.eval('tk::PlaceWindow . center')
 
 tk.Label(root, text="Input Video File:").pack(pady=(10, 0))
@@ -98,6 +142,11 @@ tk.Label(root, text="End Time (HH:MM:SS):").pack()
 end_entry = tk.Entry(root, width=15)
 end_entry.pack(pady=5)
 
-tk.Button(root, text="Create Clip", bg="green", fg="white", command=make_clip).pack(pady=15)
+tk.Button(root, text="Create Clip", bg="green", fg="white", command=make_clip).pack(pady=(15, 5))
+
+# Visual separator
+tk.Frame(root, height=2, bd=1, relief=tk.SUNKEN).pack(fill=tk.X, padx=20, pady=10)
+
+tk.Button(root, text="Merge Multiple Clips", bg="blue", fg="white", command=merge_clips).pack(pady=5)
 
 root.mainloop()
