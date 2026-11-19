@@ -30,5 +30,3 @@ A lightweight desktop GUI utility built with **Python** and **Tkinter** that sim
 
 3. **To create a clip:** Click **Browse** to select a video file, enter the **Start Time** and **End Time** (`HH:MM:SS`), and click **Create Clip**.
 4. **To merge clips:** Click **Merge Multiple Clips**, select two or more `.mp4` files, and the tool will combine them into a single file.
-
-> **Note:** Output clips are currently saved to `C:\Users\valmr\Videos\Clips\Temp` by default. Update the `save_dir` variable in `ffmpeg-clipper.py` if you want to customize the destination folder.

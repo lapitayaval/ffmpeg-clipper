@@ -36,7 +36,7 @@ def make_clip():
         return
 
     base_name = os.path.splitext(os.path.basename(input_file))[0]
-    save_dir = r"C:\Users\valmr\Videos\Clips\Temp"
+    save_dir = os.path.join(os.path.expanduser("~"), "Videos", "Clips")
     os.makedirs(save_dir, exist_ok=True)
     
     clean_start = start_time.replace(":", "-").replace(".", "-")
@@ -86,7 +86,7 @@ def merge_clips():
             messagebox.showwarning("Warning", "Please select at least two clips to merge.")
         return
 
-    save_dir = r"C:\Users\valmr\Videos\Clips\Temp"
+    save_dir = save_dir = os.path.join(os.path.expanduser("~"), "Videos", "Clips")
     os.makedirs(save_dir, exist_ok=True)
     
     # Auto-increment the filename to prevent overwriting older merges
